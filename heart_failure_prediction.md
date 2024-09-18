@@ -280,20 +280,4 @@ resting_ecg_plot <- resting_ecg_plot + plot_annotation(title = 'F')
 st_slope_plot <- st_slope_plot +  plot_annotation(title = 'G')
 ```
 
-``` r
-ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1)
-```
-
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
-
-``` r
-ggarrange(fasting, angina, ncol=2, nrow=1) 
-```
-
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
-
-``` r
-ggarrange(chest_pain_plot, resting_ecg_plot, st_slope_plot, ncol=3, nrow=1) 
-```
-
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->

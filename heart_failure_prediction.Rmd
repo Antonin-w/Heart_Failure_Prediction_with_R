@@ -254,7 +254,7 @@ st_slope_plot <- st_slope_plot +  plot_annotation(title = 'G')
 ```
 
 
-```{r}
+```{r, dpi=300, echo = FALSE}
 ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1)
 ggarrange(fasting, angina, ncol=2, nrow=1) 
 ggarrange(chest_pain_plot, resting_ecg_plot, st_slope_plot, ncol=3, nrow=1) 
