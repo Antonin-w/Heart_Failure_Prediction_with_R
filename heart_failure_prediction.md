@@ -1,15 +1,6 @@
----
-title: "Heart Failure Prediction"
-date: "2024-09-18"
-output: 
-    html_document:
-      keep_md: true
-      highlight: tango
-      number_sections: yes 
-      toc: yes
-      code_folding: hide
----
-
+Heart Failure Prediction
+================
+2024-09-18
 
 ``` r
 library(ggplot2)
@@ -25,80 +16,75 @@ library(ggpubr)
 
 # Data importation and curation
 
-
-```{.r .fold-show}
-data = read.csv("heart.csv", stringsAsFactors = T)
+``` r
+data = read.csv("/Users/antonin/Documents/Github/Heart_Failure_Prediction_with_R/data/heart.csv", stringsAsFactors = T)
 data$HeartDisease <- as.factor(data$HeartDisease)
 data$FastingBS <- as.factor(data$FastingBS)
 data$Cholesterol <- NULL 
 ```
 
-The Cholesterol column bas been removed because many 0 within population with Heart disease. Biologically, a Cholesterol level cannot be equal to 0, probably NAs values that have been replaced with 0. 
+The Cholesterol column bas been removed because many 0 within population
+with Heart disease. Biologically, a Cholesterol level cannot be equal to
+0, probably NAs values that have been replaced with 0.
 
-To use this column next time, a benchmarking has to be done with the different models created with the following options :
+To use this column next time, a benchmarking has to be done with the
+different models created with the following options :
 
-  * Rows with Cholesterol = 0 removed.  
-  * Replace 0 values with the mean.  
-  * Replace 0 with the median.  
-  * Replace 0 values using the k-mean algorithm.
-  
-Observe prediction results and choose the best option. 
+- Rows with Cholesterol = 0 removed.  
+- Replace 0 values with the mean.  
+- Replace 0 with the median.  
+- Replace 0 values using the k-mean algorithm.
 
+Observe prediction results and choose the best option.
 
-```{.r .fold-show}
+``` r
 summary(data)
 ```
 
-```
-##       Age        Sex     ChestPainType   RestingBP     FastingBS  RestingECG 
-##  Min.   :28.00   F:193   ASY:496       Min.   :  0.0   0:704     LVH   :188  
-##  1st Qu.:47.00   M:725   ATA:173       1st Qu.:120.0   1:214     Normal:552  
-##  Median :54.00           NAP:203       Median :130.0             ST    :178  
-##  Mean   :53.51           TA : 46       Mean   :132.4                         
-##  3rd Qu.:60.00                         3rd Qu.:140.0                         
-##  Max.   :77.00                         Max.   :200.0                         
-##      MaxHR       ExerciseAngina    Oldpeak        ST_Slope   HeartDisease
-##  Min.   : 60.0   N:547          Min.   :-2.6000   Down: 63   0:410       
-##  1st Qu.:120.0   Y:371          1st Qu.: 0.0000   Flat:460   1:508       
-##  Median :138.0                  Median : 0.6000   Up  :395               
-##  Mean   :136.8                  Mean   : 0.8874                          
-##  3rd Qu.:156.0                  3rd Qu.: 1.5000                          
-##  Max.   :202.0                  Max.   : 6.2000
-```
+    ##       Age        Sex     ChestPainType   RestingBP     FastingBS  RestingECG 
+    ##  Min.   :28.00   F:193   ASY:496       Min.   :  0.0   0:704     LVH   :188  
+    ##  1st Qu.:47.00   M:725   ATA:173       1st Qu.:120.0   1:214     Normal:552  
+    ##  Median :54.00           NAP:203       Median :130.0             ST    :178  
+    ##  Mean   :53.51           TA : 46       Mean   :132.4                         
+    ##  3rd Qu.:60.00                         3rd Qu.:140.0                         
+    ##  Max.   :77.00                         Max.   :200.0                         
+    ##      MaxHR       ExerciseAngina    Oldpeak        ST_Slope   HeartDisease
+    ##  Min.   : 60.0   N:547          Min.   :-2.6000   Down: 63   0:410       
+    ##  1st Qu.:120.0   Y:371          1st Qu.: 0.0000   Flat:460   1:508       
+    ##  Median :138.0                  Median : 0.6000   Up  :395               
+    ##  Mean   :136.8                  Mean   : 0.8874                          
+    ##  3rd Qu.:156.0                  3rd Qu.: 1.5000                          
+    ##  Max.   :202.0                  Max.   : 6.2000
 
-
-```{.r .fold-show}
+``` r
 summary(data$RestingBP)
 ```
 
-```
-##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##     0.0   120.0   130.0   132.4   140.0   200.0
-```
-Minimum 0 as repos resting mean the person is death, we can presume an anomali in the data. Let's check how many rows are concerned. 
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##     0.0   120.0   130.0   132.4   140.0   200.0
 
+Minimum 0 as repos resting mean the person is death, we can presume an
+anomali in the data. Let’s check how many rows are concerned.
 
-```{.r .fold-show}
+``` r
 data[data$RestingBP == 0,]
 ```
 
-```
-##     Age Sex ChestPainType RestingBP FastingBS RestingECG MaxHR ExerciseAngina
-## 450  55   M           NAP         0         0     Normal   155              N
-##     Oldpeak ST_Slope HeartDisease
-## 450     1.5     Flat            1
-```
-Only one, let's replace its value with the mean of the other row to fix that. 
+    ##     Age Sex ChestPainType RestingBP FastingBS RestingECG MaxHR ExerciseAngina
+    ## 450  55   M           NAP         0         0     Normal   155              N
+    ##     Oldpeak ST_Slope HeartDisease
+    ## 450     1.5     Flat            1
 
+Only one, let’s replace its value with the mean of the other row to fix
+that.
 
-```{.r .fold-show}
+``` r
 data[450,"RestingBP"] <- mean(data$RestingBP[-450])
 ```
 
-# Visual representation of the data 
+# Visual representation of the data
 
-<details>
-  <summary>Click to see code</summary>
+Code of the differents plots. Click to expand.
 
 ``` r
 ######################
@@ -293,29 +279,21 @@ chest_pain_plot <- chest_pain_plot + plot_annotation(title = 'E')
 resting_ecg_plot <- resting_ecg_plot + plot_annotation(title = 'F')
 st_slope_plot <- st_slope_plot +  plot_annotation(title = 'G')
 ```
-<details>
-
 
 ``` r
 ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1)
 ```
 
-![](heart_failure_prediction_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 ggarrange(fasting, angina, ncol=2, nrow=1) 
 ```
 
-![](heart_failure_prediction_files/figure-html/unnamed-chunk-8-2.png)<!-- -->
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ``` r
 ggarrange(chest_pain_plot, resting_ecg_plot, st_slope_plot, ncol=3, nrow=1) 
 ```
 
-![](heart_failure_prediction_files/figure-html/unnamed-chunk-8-3.png)<!-- -->
-
-
-
-
-
-
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->

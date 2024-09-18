@@ -1,13 +1,7 @@
 ---
 title: "Heart Failure Prediction"
 date: "`r Sys.Date()`"
-output: 
-    html_document:
-      keep_md: true
-      highlight: tango
-      number_sections: yes 
-      toc: yes
-      code_folding: hide
+output: rmarkdown::github_document
 ---
 
 ```{r, message=FALSE, warning=FALSE}
@@ -25,7 +19,7 @@ library(ggpubr)
 # Data importation and curation
 
 ```{r class.source = 'fold-show'}
-data = read.csv("heart.csv", stringsAsFactors = T)
+data = read.csv("/Users/antonin/Documents/Github/Heart_Failure_Prediction_with_R/data/heart.csv", stringsAsFactors = T)
 data$HeartDisease <- as.factor(data$HeartDisease)
 data$FastingBS <- as.factor(data$FastingBS)
 data$Cholesterol <- NULL 
