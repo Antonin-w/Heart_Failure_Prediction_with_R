@@ -99,6 +99,8 @@ data[450,"RestingBP"] <- mean(data$RestingBP[-450])
 
 Code of the differents plots. Click to expand. 
 
+<details>
+  <summary>Click to see code</summary>
 
 ``` r
 ######################
@@ -294,7 +296,7 @@ resting_ecg_plot <- resting_ecg_plot + plot_annotation(title = 'F')
 st_slope_plot <- st_slope_plot +  plot_annotation(title = 'G')
 ```
 
-
+<details>
 
 ``` r
 ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1)
