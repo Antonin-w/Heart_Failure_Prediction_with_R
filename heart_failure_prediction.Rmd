@@ -14,6 +14,8 @@ library(dplyr)
 library(patchwork)
 library(gridExtra)
 library(ggpubr)
+library(skimr)
+library(corrplot)
 ```
 
 # Data importation and curation
@@ -36,8 +38,8 @@ To use this column next time, a benchmarking has to be done with the different m
   
 Observe prediction results and choose the best option. 
 
-```{r class.source = 'fold-show'}
-summary(data)
+```{r class.source = 'fold-show', fig.align = "center"}
+skim(data)
 ```
 
 ```{r class.source = 'fold-show'}
@@ -232,33 +234,107 @@ palette <- c("#0c7d34", "#bc5090")
 Oldpeak_0 <- data.frame(data$Oldpeak, data$HeartDisease)
 
 Oldpeak_plot <- ggplot(data=Oldpeak_0, aes(x=data.Oldpeak, group=data.HeartDisease, fill=data.HeartDisease)) +
-    geom_density(adjust=1, alpha=.5) +
+    geom_density(adjust=1, alpha=0.5) +
     theme_classic() + 
     scale_fill_manual(name = "Heart Condition", values = palette) + 
-    labs(title = "ST depression value mesured", x = "Value", y = "Density") +
+    labs(title = "", x = "ST depression value mesured", y = "") +
     theme(plot.title = element_text(hjust = 0.5)) + 
     scale_fill_manual(name = "Heart Condition", values = custom_colors, labels = c("No", "Yes"))
 
-
 ######################
-# Add graph identifer
+# Merge plots
 
-age_distribution_sex <- age_distribution_sex + plot_annotation(title = 'A')
-boxplots <- ggarrange(restingBP_boxplot, max_heart_rate_boxplot, ncol=2, nrow=1, common.legend = TRUE, legend="bottom") + plot_annotation(title = 'B')
-fasting <- ggarrange(fasting_plot_0, fasting_plot_1, ncol=3, nrow=1, common.legend = TRUE, legend="none") + plot_annotation(title = 'C')
-angina <- ggarrange(exercice_angina_plot_0, exercice_angina_plot_1, ncol=2, nrow=1, common.legend = TRUE, legend="right") + plot_annotation(title = 'D')
-chest_pain_plot <- chest_pain_plot + plot_annotation(title = 'E')
-resting_ecg_plot <- resting_ecg_plot + plot_annotation(title = 'F')
-st_slope_plot <- st_slope_plot +  plot_annotation(title = 'G')
+boxplots <- ggarrange(restingBP_boxplot, max_heart_rate_boxplot, ncol=2, nrow=1, common.legend = TRUE, legend="bottom", labels = c("B", "C")) 
+fasting <- ggarrange(fasting_plot_0, fasting_plot_1, ncol=3, nrow=1, common.legend = TRUE, legend="none")
+angina <- ggarrange(exercice_angina_plot_0, exercice_angina_plot_1, ncol=2, nrow=1, common.legend = TRUE, legend="right")
 
 ```
 
+**Figures**:
 
-```{r, dpi=300, echo = FALSE}
-ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1)
-ggarrange(fasting, angina, ncol=2, nrow=1) 
-ggarrange(chest_pain_plot, resting_ecg_plot, st_slope_plot, ncol=3, nrow=1) 
+- **A.**    Age distribution by sex
+- **B.**    Resting blood pressure [mm Hg]
+- **C.**    Maximum heart rate achieved [Beats per minute]
+- **D.**    Count of patients with fasting blood sugar above and below 120 mg/dl
+- **E.**    Count of patients with and without exercise-induced angina
+- **F.**    Distribution of chest pain type (%)
+- **G.**    Distribution of resting electrocardiogram results [Normal: Normal, ST: having ST-T wave abnormality (T wave inversions and/or ST elevation or depression of > 0.05 mV), LVH: showing probable or definite left ventricular hypertrophy by Estes' criteria] (%)
+- **H.**    Distribution of the slope of the peak exercise ST segment (%)
+- **I.**    Density of oldpeak ST [Numeric value measured in depression]
+
+
+```{r, dpi=300}
+# Adding labels
+ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1, labels = c("A"))
+ggarrange(fasting, angina, ncol=2, nrow=1, labels = c("D", "E")) 
+ggarrange(chest_pain_plot, resting_ecg_plot, st_slope_plot, ncol=3, nrow=1, labels = c("F", "G", "H"))
+ggarrange(Oldpeak_plot, ncol=1, nrow=1, labels = c("I"))
 ```
+
+
+At first glance, we can clearly see a surepresentation of Male within the data, and a sample age tending toward 55 years old (Fig. A). The boxplot  showing the resting blood pressure (Fig. B) doesn't visually give the impression having a link with heart diseases, contrary to the plot of the maximum heart rate achieved (Fig. C). To confirm or infirm our observation, we can statistically prove or not the correlation. 
+
+Before that, we have to test if the Resting blood pressure results and maximum heart rate achieved follow a normal distribution. 
+
+```{r}
+shapiro.test(data$RestingBP) 
+shapiro.test(data$MaxHR)
+```
+Both p-value are below 0.05, so we can conclude they do not follow a normal distribution, and we will have to perform non-parametric correlation test (Spearman).
+
+```{r}
+cor.test(data$RestingBP, as.numeric(data$HeartDisease), method = "spearman", exact = FALSE)
+cor.test(data$MaxHR, as.numeric(data$HeartDisease), method = "spearman", exact = FALSE)
+
+```
+The hypothesis H0 for cor.test is : There is no association between the two variables. However, in both case, p-value < 0.05, so we rejet the nul hypothesis. It can be concluded that both RestingBP and MaxHR do have a correclation with heart diseases. The correlation coefficient is around 0.12 for RestingBP, and -0.40 for MaxHR. Therefore, MaxHR has a higher impact on heart diseases than RestingBP. 
+
+A higher amount of patients can be seen with high fasting blood sugar [>120 mg/dl] and exercice-induces angina among heart disease victims (Fig. D and Fig. E), both could be an important factor. 
+
+From Fig. F, patients affected by heart diseases don't have any chest pain (asymptomatic) and generally a flat slope of the peak exercise (Fig. H).
+
+Finally, Fig. I indicates that most of the patients without heart condition hasn't ST depression on their electrocardiogram results, when the ST segment is abnormally low below the baseline, it could be linked with heart diseases. 
+
+To have a better understanding if some variable are correlated between each others, we can generate a correlation matrix and observe the correlation values between each conditions.
+
+```{r, dpi=300}
+######################
+# Correlation matrix
+
+table <- data.frame(as.numeric(data$Sex), data$Age, data$RestingBP, data$MaxHR, data$Oldpeak, as.numeric(data$FastingBS), as.numeric(data$ExerciseAngina), as.numeric(data$RestingECG))
+names(table) <- c("Sex", "Age", "Resting BP", "Max HR", "Oldpeak", "FastingBS", "Exercice Angina", "Resting ECG")
+red <- cor(table)
+correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = T,
+         col = colorRampPalette(c("#446455", "#FDD262", "#D3DDDC"))(100),
+         tl.col = "black", tl.srt = 45)
+
+```
+
+# Model creation 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

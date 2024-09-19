@@ -1,6 +1,6 @@
 Heart Failure Prediction
 ================
-2024-09-18
+2024-09-19
 
 ``` r
 library(ggplot2)
@@ -12,6 +12,8 @@ library(dplyr)
 library(patchwork)
 library(gridExtra)
 library(ggpubr)
+library(skimr)
+library(corrplot)
 ```
 
 # Data importation and curation
@@ -38,23 +40,43 @@ different models created with the following options :
 Observe prediction results and choose the best option.
 
 ``` r
-summary(data)
+skim(data)
 ```
 
-    ##       Age        Sex     ChestPainType   RestingBP     FastingBS  RestingECG 
-    ##  Min.   :28.00   F:193   ASY:496       Min.   :  0.0   0:704     LVH   :188  
-    ##  1st Qu.:47.00   M:725   ATA:173       1st Qu.:120.0   1:214     Normal:552  
-    ##  Median :54.00           NAP:203       Median :130.0             ST    :178  
-    ##  Mean   :53.51           TA : 46       Mean   :132.4                         
-    ##  3rd Qu.:60.00                         3rd Qu.:140.0                         
-    ##  Max.   :77.00                         Max.   :200.0                         
-    ##      MaxHR       ExerciseAngina    Oldpeak        ST_Slope   HeartDisease
-    ##  Min.   : 60.0   N:547          Min.   :-2.6000   Down: 63   0:410       
-    ##  1st Qu.:120.0   Y:371          1st Qu.: 0.0000   Flat:460   1:508       
-    ##  Median :138.0                  Median : 0.6000   Up  :395               
-    ##  Mean   :136.8                  Mean   : 0.8874                          
-    ##  3rd Qu.:156.0                  3rd Qu.: 1.5000                          
-    ##  Max.   :202.0                  Max.   : 6.2000
+|                                                  |      |
+|:-------------------------------------------------|:-----|
+| Name                                             | data |
+| Number of rows                                   | 918  |
+| Number of columns                                | 11   |
+| \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_   |      |
+| Column type frequency:                           |      |
+| factor                                           | 7    |
+| numeric                                          | 4    |
+| \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ |      |
+| Group variables                                  | None |
+
+Data summary
+
+**Variable type: factor**
+
+| skim_variable  | n_missing | complete_rate | ordered | n_unique | top_counts                           |
+|:---------------|----------:|--------------:|:--------|---------:|:-------------------------------------|
+| Sex            |         0 |             1 | FALSE   |        2 | M: 725, F: 193                       |
+| ChestPainType  |         0 |             1 | FALSE   |        4 | ASY: 496, NAP: 203, ATA: 173, TA: 46 |
+| FastingBS      |         0 |             1 | FALSE   |        2 | 0: 704, 1: 214                       |
+| RestingECG     |         0 |             1 | FALSE   |        3 | Nor: 552, LVH: 188, ST: 178          |
+| ExerciseAngina |         0 |             1 | FALSE   |        2 | N: 547, Y: 371                       |
+| ST_Slope       |         0 |             1 | FALSE   |        3 | Fla: 460, Up: 395, Dow: 63           |
+| HeartDisease   |         0 |             1 | FALSE   |        2 | 1: 508, 0: 410                       |
+
+**Variable type: numeric**
+
+| skim_variable | n_missing | complete_rate |   mean |    sd |   p0 | p25 |   p50 |   p75 |  p100 | hist  |
+|:--------------|----------:|--------------:|-------:|------:|-----:|----:|------:|------:|------:|:------|
+| Age           |         0 |             1 |  53.51 |  9.43 | 28.0 |  47 |  54.0 |  60.0 |  77.0 | ▁▅▇▆▁ |
+| RestingBP     |         0 |             1 | 132.40 | 18.51 |  0.0 | 120 | 130.0 | 140.0 | 200.0 | ▁▁▃▇▁ |
+| MaxHR         |         0 |             1 | 136.81 | 25.46 | 60.0 | 120 | 138.0 | 156.0 | 202.0 | ▁▃▇▆▂ |
+| Oldpeak       |         0 |             1 |   0.89 |  1.07 | -2.6 |   0 |   0.6 |   1.5 |   6.2 | ▁▇▆▁▁ |
 
 ``` r
 summary(data$RestingBP)
@@ -260,24 +282,160 @@ palette <- c("#0c7d34", "#bc5090")
 Oldpeak_0 <- data.frame(data$Oldpeak, data$HeartDisease)
 
 Oldpeak_plot <- ggplot(data=Oldpeak_0, aes(x=data.Oldpeak, group=data.HeartDisease, fill=data.HeartDisease)) +
-    geom_density(adjust=1, alpha=.5) +
+    geom_density(adjust=1, alpha=0.5) +
     theme_classic() + 
     scale_fill_manual(name = "Heart Condition", values = palette) + 
-    labs(title = "ST depression value mesured", x = "Value", y = "Density") +
+    labs(title = "", x = "ST depression value mesured", y = "") +
     theme(plot.title = element_text(hjust = 0.5)) + 
     scale_fill_manual(name = "Heart Condition", values = custom_colors, labels = c("No", "Yes"))
 
-
 ######################
-# Add graph identifer
+# Merge plots
 
-age_distribution_sex <- age_distribution_sex + plot_annotation(title = 'A')
-boxplots <- ggarrange(restingBP_boxplot, max_heart_rate_boxplot, ncol=2, nrow=1, common.legend = TRUE, legend="bottom") + plot_annotation(title = 'B')
-fasting <- ggarrange(fasting_plot_0, fasting_plot_1, ncol=3, nrow=1, common.legend = TRUE, legend="none") + plot_annotation(title = 'C')
-angina <- ggarrange(exercice_angina_plot_0, exercice_angina_plot_1, ncol=2, nrow=1, common.legend = TRUE, legend="right") + plot_annotation(title = 'D')
-chest_pain_plot <- chest_pain_plot + plot_annotation(title = 'E')
-resting_ecg_plot <- resting_ecg_plot + plot_annotation(title = 'F')
-st_slope_plot <- st_slope_plot +  plot_annotation(title = 'G')
+boxplots <- ggarrange(restingBP_boxplot, max_heart_rate_boxplot, ncol=2, nrow=1, common.legend = TRUE, legend="bottom", labels = c("B", "C")) 
+fasting <- ggarrange(fasting_plot_0, fasting_plot_1, ncol=3, nrow=1, common.legend = TRUE, legend="none")
+angina <- ggarrange(exercice_angina_plot_0, exercice_angina_plot_1, ncol=2, nrow=1, common.legend = TRUE, legend="right")
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+**Figures**:
+
+- **A.** Age distribution by sex
+- **B.** Resting blood pressure \[mm Hg\]
+- **C.** Maximum heart rate achieved \[Beats per minute\]
+- **D.** Count of patients with fasting blood sugar above and below 120
+  mg/dl
+- **E.** Count of patients with and without exercise-induced angina
+- **F.** Distribution of chest pain type (%)
+- **G.** Distribution of resting electrocardiogram results \[Normal:
+  Normal, ST: having ST-T wave abnormality (T wave inversions and/or ST
+  elevation or depression of \> 0.05 mV), LVH: showing probable or
+  definite left ventricular hypertrophy by Estes’ criteria\] (%)
+- **H.** Distribution of the slope of the peak exercise ST segment (%)
+- **I.** Density of oldpeak ST \[Numeric value measured in depression\]
+
+``` r
+# Adding labels
+ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1, labels = c("A"))
+```
+
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
+ggarrange(fasting, angina, ncol=2, nrow=1, labels = c("D", "E")) 
+```
+
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+
+``` r
+ggarrange(chest_pain_plot, resting_ecg_plot, st_slope_plot, ncol=3, nrow=1, labels = c("F", "G", "H"))
+```
+
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+
+``` r
+ggarrange(Oldpeak_plot, ncol=1, nrow=1, labels = c("I"))
+```
+
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
+
+At first glance, we can clearly see a surepresentation of Male within
+the data, and a sample age tending toward 55 years old (Fig. A). The
+boxplot showing the resting blood pressure (Fig. B) doesn’t visually
+give the impression having a link with heart diseases, contrary to the
+plot of the maximum heart rate achieved (Fig. C). To confirm or infirm
+our observation, we can statistically prove or not the correlation.
+
+Before that, we have to test if the Resting blood pressure results and
+maximum heart rate achieved follow a normal distribution.
+
+``` r
+shapiro.test(data$RestingBP) 
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  data$RestingBP
+    ## W = 0.97127, p-value = 1.743e-12
+
+``` r
+shapiro.test(data$MaxHR)
+```
+
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  data$MaxHR
+    ## W = 0.99267, p-value = 0.0001683
+
+Both p-value are below 0.05, so we can conclude they do not follow a
+normal distribution, and we will have to perform non-parametric
+correlation test (Spearman).
+
+``` r
+cor.test(data$RestingBP, as.numeric(data$HeartDisease), method = "spearman", exact = FALSE)
+```
+
+    ## 
+    ##  Spearman's rank correlation rho
+    ## 
+    ## data:  data$RestingBP and as.numeric(data$HeartDisease)
+    ## S = 113979002, p-value = 0.0004284
+    ## alternative hypothesis: true rho is not equal to 0
+    ## sample estimates:
+    ##       rho 
+    ## 0.1160075
+
+``` r
+cor.test(data$MaxHR, as.numeric(data$HeartDisease), method = "spearman", exact = FALSE)
+```
+
+    ## 
+    ##  Spearman's rank correlation rho
+    ## 
+    ## data:  data$MaxHR and as.numeric(data$HeartDisease)
+    ## S = 181133616, p-value < 2.2e-16
+    ## alternative hypothesis: true rho is not equal to 0
+    ## sample estimates:
+    ##        rho 
+    ## -0.4048268
+
+The hypothesis H0 for cor.test is : There is no association between the
+two variables. However, in both case, p-value \< 0.05, so we rejet the
+nul hypothesis. It can be concluded that both RestingBP and MaxHR do
+have a correclation with heart diseases. The correlation coefficient is
+around 0.12 for RestingBP, and -0.40 for MaxHR. Therefore, MaxHR has a
+higher impact on heart diseases than RestingBP.
+
+A higher amount of patients can be seen with high fasting blood sugar
+\[\>120 mg/dl\] and exercice-induces angina among heart disease victims
+(Fig. D and Fig. E), both could be an important factor.
+
+From Fig. F, patients affected by heart diseases don’t have any chest
+pain (asymptomatic) and generally a flat slope of the peak exercise
+(Fig. H).
+
+Finally, Fig. I indicates that most of the patients without heart
+condition hasn’t ST depression on their electrocardiogram results, when
+the ST segment is abnormally low below the baseline, it could be linked
+with heart diseases.
+
+To have a better understanding if some variable are correlated between
+each others, we can generate a correlation matrix and observe the
+correlation values between each conditions.
+
+``` r
+######################
+# Correlation matrix
+
+table <- data.frame(as.numeric(data$Sex), data$Age, data$RestingBP, data$MaxHR, data$Oldpeak, as.numeric(data$FastingBS), as.numeric(data$ExerciseAngina), as.numeric(data$RestingECG))
+names(table) <- c("Sex", "Age", "Resting BP", "Max HR", "Oldpeak", "FastingBS", "Exercice Angina", "Resting ECG")
+red <- cor(table)
+correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = T,
+         col = colorRampPalette(c("#446455", "#FDD262", "#D3DDDC"))(100),
+         tl.col = "black", tl.srt = 45)
+```
+
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+# Model creation
