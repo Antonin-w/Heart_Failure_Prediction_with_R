@@ -14,6 +14,8 @@ library(gridExtra)
 library(ggpubr)
 library(skimr)
 library(corrplot)
+library(caret) 
+library(olsrr)
 ```
 
 # Data importation and curation
@@ -438,4 +440,150 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
 
 ![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
-# Model creation
+# Machine learning models
+
+## Data train & data test
+
+``` r
+data <- data %>%
+  mutate(HeartDisease = ifelse(HeartDisease == "1", TRUE, FALSE))
+```
+
+Before training any model, the dataset has to be split in two, 80% of
+the dataset will be used to train the model, and the other 20% will
+serve to test it.
+
+``` r
+eighty_percents <- round(nrow(data) * 0.2)  # Calculate how many sample represent 20% of the dataset
+choice <-  sample(1:nrow(data), size = eighty_percents, replace = F) # Randomly selecting 20% of the number of patient
+
+data.test <- data[choice, ] # Keep 20% of the dataset
+data.train <- data[-choice,] # Keep the other 80% of the dataset
+```
+
+## Linear regression
+
+``` r
+linear_reg_all <- lm(HeartDisease ~ ., data = data.train)
+```
+
+``` r
+data.test$pred = predict(linear_reg_all, data.test) > 0.5
+confusion_matrix_linear_reg_all <- table(data.test$HeartDisease, data.test$pred)
+(confusion_matrix_linear_reg_all[1,1] + confusion_matrix_linear_reg_all[2,2]) / sum(confusion_matrix_linear_reg_all) * 100
+```
+
+    ## [1] 84.78261
+
+``` r
+stats_linear_reg_all <- confusionMatrix(confusion_matrix_linear_reg_all)
+
+stats_linear_reg_all$overall
+```
+
+    ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+    ##   8.478261e-01   6.811881e-01   7.876304e-01   8.964375e-01   6.304348e-01 
+    ## AccuracyPValue  McnemarPValue 
+    ##   6.080541e-11   1.858767e-01
+
+``` r
+stats_linear_reg_all$byClass
+```
+
+    ##          Sensitivity          Specificity       Pos Pred Value 
+    ##            0.8529412            0.8448276            0.7631579 
+    ##       Neg Pred Value            Precision               Recall 
+    ##            0.9074074            0.7631579            0.8529412 
+    ##                   F1           Prevalence       Detection Rate 
+    ##            0.8055556            0.3695652            0.3152174 
+    ## Detection Prevalence    Balanced Accuracy 
+    ##            0.4130435            0.8488844
+
+The best model isn’t necessary the one with the best accuracy, because
+it’s gonna be always one with all the factors, we can try to simplify as
+much as we can the model by removing the factor not bringing enough
+information to help for the prediction.
+
+From the package `olsrr` (similar to `leaps`), the funcion
+ols_step_best_subset will perform all the combination and return the
+best predictors. The Mallows’s C(p) is a good indicator to know which
+model choose at the end, balancing between complexity and accuracy.
+
+``` r
+ols_step_best_subset(linear_reg_all)
+```
+
+    ##                                          Best Subsets Regression                                         
+    ## ---------------------------------------------------------------------------------------------------------
+    ## Model Index    Predictors
+    ## ---------------------------------------------------------------------------------------------------------
+    ##      1         ST_Slope                                                                                   
+    ##      2         ChestPainType ST_Slope                                                                     
+    ##      3         Sex ChestPainType ST_Slope                                                                 
+    ##      4         Sex ChestPainType ExerciseAngina ST_Slope                                                  
+    ##      5         Sex ChestPainType FastingBS ExerciseAngina ST_Slope                                        
+    ##      6         Sex ChestPainType FastingBS ExerciseAngina Oldpeak ST_Slope                                
+    ##      7         Age Sex ChestPainType FastingBS ExerciseAngina Oldpeak ST_Slope                            
+    ##      8         Age Sex ChestPainType FastingBS MaxHR ExerciseAngina Oldpeak ST_Slope                      
+    ##      9         Age Sex ChestPainType FastingBS RestingECG MaxHR ExerciseAngina Oldpeak ST_Slope           
+    ##     10         Age Sex ChestPainType RestingBP FastingBS RestingECG MaxHR ExerciseAngina Oldpeak ST_Slope 
+    ## ---------------------------------------------------------------------------------------------------------
+    ## 
+    ##                                                      Subsets Regression Summary                                                     
+    ## ------------------------------------------------------------------------------------------------------------------------------------
+    ##                        Adj.        Pred                                                                                              
+    ## Model    R-Square    R-Square    R-Square      C(p)        AIC          SBIC         SBC         MSEP       FPE       HSP      APC  
+    ## ------------------------------------------------------------------------------------------------------------------------------------
+    ##   1        0.3836      0.3819      0.3782    314.4752    712.3073    -1374.0533    730.7013    112.4948    0.1539    2e-04    0.6197 
+    ##   2        0.4968      0.4933      0.4871    129.0850    569.4219    -1520.4432    601.6115     91.9675    0.1263    2e-04    0.5073 
+    ##   3        0.5253      0.5214      0.5146     82.8361    528.5846    -1561.1178    565.3727     86.8727    0.1195    2e-04    0.4799 
+    ##   4        0.5463      0.5419      0.5345     49.3795    497.4305    -1592.0101    538.8171     83.1501    0.1145    2e-04    0.4599 
+    ##   5        0.5642      0.5594      0.5517     21.0484    469.8298    -1619.2216    515.8149     79.9734    0.1103    2e-04    0.4430 
+    ##   6        0.5711      0.5658      0.5575     11.3831    460.1198    -1628.7159    510.7034     78.8161    0.1089    1e-04    0.4371 
+    ##   7        0.5741      0.5682      0.5592      8.4061    457.0663    -1631.6342    512.2484     78.3833    0.1084    1e-04    0.4353 
+    ##   8        0.5746      0.5681      0.5583      9.5324    458.1756    -1630.4650    517.9562     78.3964    0.1086    1e-04    0.4360 
+    ##   9        0.5748      0.5671      0.5558     13.1750    461.8110    -1628.7794    530.7886     78.4658    0.1090    1e-04    0.4370 
+    ##  10        0.5749      0.5666      0.5545     15.0000    463.6323    -1626.9114    537.2084     78.5554    0.1092    1e-04    0.4380 
+    ## ------------------------------------------------------------------------------------------------------------------------------------
+    ## AIC: Akaike Information Criteria 
+    ##  SBIC: Sawa's Bayesian Information Criteria 
+    ##  SBC: Schwarz Bayesian Criteria 
+    ##  MSEP: Estimated error of prediction, assuming multivariate normality 
+    ##  FPE: Final Prediction Error 
+    ##  HSP: Hocking's Sp 
+    ##  APC: Amemiya Prediction Criteria
+
+The best model following Mallows’s C(p) include only the OldPeak factor
+instead of the 10 of the previous model.
+
+``` r
+linear_reg_1 <- lm(HeartDisease ~ ST_Slope, data = data.train)
+
+data.test$pred = predict(linear_reg_1, data.test) > 0.5
+confusion_matrix_linear_reg_1 <- table(data.test$HeartDisease, data.test$pred)
+
+stats_linear_reg_1 <- confusionMatrix(confusion_matrix_linear_reg_1)
+
+stats_linear_reg_1$overall
+```
+
+    ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+    ##   8.260870e-01   6.327345e-01   7.634499e-01   8.778980e-01   6.521739e-01 
+    ## AccuracyPValue  McnemarPValue 
+    ##   1.339413e-07   5.182993e-02
+
+``` r
+stats_linear_reg_1$byClass
+```
+
+    ##          Sensitivity          Specificity       Pos Pred Value 
+    ##            0.8437500            0.8166667            0.7105263 
+    ##       Neg Pred Value            Precision               Recall 
+    ##            0.9074074            0.7105263            0.8437500 
+    ##                   F1           Prevalence       Detection Rate 
+    ##            0.7714286            0.3478261            0.2934783 
+    ## Detection Prevalence    Balanced Accuracy 
+    ##            0.4130435            0.8302083
+
+The performances statistics of the model are quite similar to the
+previous one while removing 9 factors.

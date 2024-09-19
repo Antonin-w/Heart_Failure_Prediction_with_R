@@ -16,6 +16,8 @@ library(gridExtra)
 library(ggpubr)
 library(skimr)
 library(corrplot)
+library(caret) 
+library(olsrr)
 ```
 
 # Data importation and curation
@@ -310,7 +312,66 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
 
 ```
 
-# Model creation 
+# Machine learning models  
+
+## Data train & data test
+
+```{r}
+data <- data %>%
+  mutate(HeartDisease = ifelse(HeartDisease == "1", TRUE, FALSE))
+```
+
+Before training any model, the dataset has to be split in two, 80% of the dataset will be used to train the model, and the other 20% will serve to test it. 
+
+```{r}
+eighty_percents <- round(nrow(data) * 0.2)  # Calculate how many sample represent 20% of the dataset
+choice <-  sample(1:nrow(data), size = eighty_percents, replace = F) # Randomly selecting 20% of the number of patient
+
+data.test <- data[choice, ] # Keep 20% of the dataset
+data.train <- data[-choice,] # Keep the other 80% of the dataset
+``` 
+
+## Linear regression
+
+```{r}
+linear_reg_all <- lm(HeartDisease ~ ., data = data.train)
+```
+
+```{r}
+data.test$pred = predict(linear_reg_all, data.test) > 0.5
+confusion_matrix_linear_reg_all <- table(data.test$HeartDisease, data.test$pred)
+(confusion_matrix_linear_reg_all[1,1] + confusion_matrix_linear_reg_all[2,2]) / sum(confusion_matrix_linear_reg_all) * 100
+
+stats_linear_reg_all <- confusionMatrix(confusion_matrix_linear_reg_all)
+
+stats_linear_reg_all$overall
+stats_linear_reg_all$byClass
+```
+
+The best model isn't necessary the one with the best accuracy, because it's gonna be always one with all the factors, we can try to simplify as much as we can the model by removing the factor not bringing enough information to help for the prediction.
+
+From the package `olsrr` (similar to `leaps`), the funcion ols_step_best_subset will perform all the combination and return the best predictors. The Mallows's C(p) is a good indicator to know which model choose at the end, balancing between complexity and accuracy. 
+
+```{r}
+ols_step_best_subset(linear_reg_all)
+```
+
+The best model following Mallows's C(p) include only the OldPeak factor instead of the 10 of the previous model.
+
+```{r}
+linear_reg_1 <- lm(HeartDisease ~ ST_Slope, data = data.train)
+
+data.test$pred = predict(linear_reg_1, data.test) > 0.5
+confusion_matrix_linear_reg_1 <- table(data.test$HeartDisease, data.test$pred)
+
+stats_linear_reg_1 <- confusionMatrix(confusion_matrix_linear_reg_1)
+
+stats_linear_reg_1$overall
+stats_linear_reg_1$byClass
+```
+The performances statistics of the model are quite similar to the previous one while removing 9 factors. 
+
+
 
 
 
