@@ -1,6 +1,6 @@
 Heart Failure Prediction
 ================
-2024-09-19
+2024-09-20
 
 ``` r
 library(ggplot2)
@@ -16,6 +16,8 @@ library(skimr)
 library(corrplot)
 library(caret) 
 library(olsrr)
+library(class)
+library(fastDummies)
 ```
 
 # Data importation and curation
@@ -446,7 +448,7 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
 
 ``` r
 data <- data %>%
-  mutate(HeartDisease = ifelse(HeartDisease == "1", TRUE, FALSE))
+  mutate(HeartDisease = ifelse(HeartDisease == 1, TRUE, FALSE))
 ```
 
 Before training any model, the dataset has to be split in two, 80% of
@@ -470,34 +472,29 @@ linear_reg_all <- lm(HeartDisease ~ ., data = data.train)
 ``` r
 data.test$pred = predict(linear_reg_all, data.test) > 0.5
 confusion_matrix_linear_reg_all <- table(data.test$HeartDisease, data.test$pred)
-(confusion_matrix_linear_reg_all[1,1] + confusion_matrix_linear_reg_all[2,2]) / sum(confusion_matrix_linear_reg_all) * 100
-```
 
-    ## [1] 84.78261
-
-``` r
 stats_linear_reg_all <- confusionMatrix(confusion_matrix_linear_reg_all)
 
 stats_linear_reg_all$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   8.478261e-01   6.811881e-01   7.876304e-01   8.964375e-01   6.304348e-01 
+    ##   8.423913e-01   6.844097e-01   7.815544e-01   8.918348e-01   5.108696e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   6.080541e-11   1.858767e-01
+    ##   3.938389e-21   7.103466e-01
 
 ``` r
 stats_linear_reg_all$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.8529412            0.8448276            0.7631579 
+    ##            0.8222222            0.8617021            0.8505747 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.9074074            0.7631579            0.8529412 
+    ##            0.8350515            0.8505747            0.8222222 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.8055556            0.3695652            0.3152174 
+    ##            0.8361582            0.4891304            0.4021739 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.4130435            0.8488844
+    ##            0.4728261            0.8419622
 
 The best model isn’t necessary the one with the best accuracy, because
 it’s gonna be always one with all the factors, we can try to simplify as
@@ -520,10 +517,10 @@ ols_step_best_subset(linear_reg_all)
     ##      1         ST_Slope                                                                                   
     ##      2         ChestPainType ST_Slope                                                                     
     ##      3         Sex ChestPainType ST_Slope                                                                 
-    ##      4         Sex ChestPainType ExerciseAngina ST_Slope                                                  
+    ##      4         Sex ChestPainType FastingBS ST_Slope                                                       
     ##      5         Sex ChestPainType FastingBS ExerciseAngina ST_Slope                                        
     ##      6         Sex ChestPainType FastingBS ExerciseAngina Oldpeak ST_Slope                                
-    ##      7         Age Sex ChestPainType FastingBS ExerciseAngina Oldpeak ST_Slope                            
+    ##      7         Sex ChestPainType FastingBS MaxHR ExerciseAngina Oldpeak ST_Slope                          
     ##      8         Age Sex ChestPainType FastingBS MaxHR ExerciseAngina Oldpeak ST_Slope                      
     ##      9         Age Sex ChestPainType FastingBS RestingECG MaxHR ExerciseAngina Oldpeak ST_Slope           
     ##     10         Age Sex ChestPainType RestingBP FastingBS RestingECG MaxHR ExerciseAngina Oldpeak ST_Slope 
@@ -534,16 +531,16 @@ ols_step_best_subset(linear_reg_all)
     ##                        Adj.        Pred                                                                                              
     ## Model    R-Square    R-Square    R-Square      C(p)        AIC          SBIC         SBC         MSEP       FPE       HSP      APC  
     ## ------------------------------------------------------------------------------------------------------------------------------------
-    ##   1        0.3836      0.3819      0.3782    314.4752    712.3073    -1374.0533    730.7013    112.4948    0.1539    2e-04    0.6197 
-    ##   2        0.4968      0.4933      0.4871    129.0850    569.4219    -1520.4432    601.6115     91.9675    0.1263    2e-04    0.5073 
-    ##   3        0.5253      0.5214      0.5146     82.8361    528.5846    -1561.1178    565.3727     86.8727    0.1195    2e-04    0.4799 
-    ##   4        0.5463      0.5419      0.5345     49.3795    497.4305    -1592.0101    538.8171     83.1501    0.1145    2e-04    0.4599 
-    ##   5        0.5642      0.5594      0.5517     21.0484    469.8298    -1619.2216    515.8149     79.9734    0.1103    2e-04    0.4430 
-    ##   6        0.5711      0.5658      0.5575     11.3831    460.1198    -1628.7159    510.7034     78.8161    0.1089    1e-04    0.4371 
-    ##   7        0.5741      0.5682      0.5592      8.4061    457.0663    -1631.6342    512.2484     78.3833    0.1084    1e-04    0.4353 
-    ##   8        0.5746      0.5681      0.5583      9.5324    458.1756    -1630.4650    517.9562     78.3964    0.1086    1e-04    0.4360 
-    ##   9        0.5748      0.5671      0.5558     13.1750    461.8110    -1628.7794    530.7886     78.4658    0.1090    1e-04    0.4370 
-    ##  10        0.5749      0.5666      0.5545     15.0000    463.6323    -1626.9114    537.2084     78.5554    0.1092    1e-04    0.4380 
+    ##   1        0.3955      0.3939      0.3904    286.6233    693.3269    -1392.9342    711.7209    109.6231    0.1500    2e-04    0.6078 
+    ##   2        0.4902      0.4867      0.4801    133.7124    574.2985    -1515.5971    606.4881     92.5805    0.1272    2e-04    0.5140 
+    ##   3        0.5235      0.5196      0.5124     79.8284    526.7262    -1562.9475    563.5143     86.6531    0.1192    2e-04    0.4817 
+    ##   4        0.5420      0.5376      0.5301     50.8024    499.6869    -1589.7717    541.0735     83.4062    0.1149    2e-04    0.4643 
+    ##   5        0.5574      0.5525      0.5443     26.9930    476.6227    -1612.5246    522.6078     80.7170    0.1113    2e-04    0.4499 
+    ##   6        0.5639      0.5585      0.5498     17.9614    467.6429    -1621.3199    518.2265     79.6281    0.1100    2e-04    0.4445 
+    ##   7        0.5699      0.5639      0.5546      9.9814    459.5662    -1629.1697    514.7484     78.6507    0.1088    1e-04    0.4396 
+    ##   8        0.5712      0.5646      0.5546      9.8406    459.3865    -1629.2619    519.1672     78.5258    0.1087    1e-04    0.4395 
+    ##   9        0.5716      0.5639      0.5523     13.0130    462.5423    -1628.0435    531.5199     78.5440    0.1091    1e-04    0.4402 
+    ##  10        0.5717      0.5633      0.5509     15.0000    464.5289    -1626.0147    538.1051     78.6514    0.1094    1e-04    0.4414 
     ## ------------------------------------------------------------------------------------------------------------------------------------
     ## AIC: Akaike Information Criteria 
     ##  SBIC: Sawa's Bayesian Information Criteria 
@@ -568,22 +565,103 @@ stats_linear_reg_1$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   8.260870e-01   6.327345e-01   7.634499e-01   8.778980e-01   6.521739e-01 
+    ##   7.989130e-01   5.954362e-01   7.336453e-01   8.542879e-01   5.543478e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   1.339413e-07   5.182993e-02
+    ##   3.017861e-12   5.107978e-01
 
 ``` r
 stats_linear_reg_1$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.8437500            0.8166667            0.7105263 
+    ##            0.8048780            0.7941176            0.7586207 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.9074074            0.7105263            0.8437500 
+    ##            0.8350515            0.7586207            0.8048780 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.7714286            0.3478261            0.2934783 
+    ##            0.7810651            0.4456522            0.3586957 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.4130435            0.8302083
+    ##            0.4728261            0.7994978
 
 The performances statistics of the model are quite similar to the
 previous one while removing 9 factors.
+
+# Knn
+
+As we have qualitative values in our dataset, we’d like to convert them
+in dummy variables. But before that, let’s scale the variable Age,
+RestingBP, MaxHR and OldPeak because they aren’t on the same metrics and
+could be a problem for the knn algorithm.
+
+``` r
+data[,c("Age", "RestingBP", "MaxHR", "Oldpeak")] <- scale(data[,c("Age", "RestingBP", "MaxHR", "Oldpeak")])
+
+dummy_two <- dummy_cols(data, select_columns = c("Sex", "FastingBS", "ExerciseAngina", "HeartDisease"), remove_first_dummy = TRUE) # Dummy code variables that have just two levels
+dummy_three_plus <- dummy_cols(data, select_columns = c("ChestPainType", "RestingECG", "ST_Slope")) # Dummy code variables that have three levels or plus
+
+
+# Creation of a dataframe with all factors represented as dummy variables: 
+dummy_data <- data.frame(dummy_two$Sex_M, 
+                         dummy_two$Age, 
+                         dummy_two$FastingBS_1,
+                         dummy_two$ExerciseAngina_Y,
+                         
+                         data$RestingBP,
+                         data$MaxHR,
+                         data$Oldpeak,
+                         
+                         dummy_three_plus$ChestPainType_ASY,
+                         dummy_three_plus$ChestPainType_ATA,
+                         dummy_three_plus$ChestPainType_NAP,
+                         dummy_three_plus$ChestPainType_TA,
+                         dummy_three_plus$RestingECG_LVH,
+                         dummy_three_plus$RestingECG_Normal,
+                         dummy_three_plus$RestingECG_ST,
+                         dummy_three_plus$ST_Slope_Down,
+                         dummy_three_plus$ST_Slope_Flat,
+                         dummy_three_plus$ST_Slope_Up
+                         )
+```
+
+Same as before, we have to split the dataset in training and testing
+sets.
+
+``` r
+eighty_percents <- round(nrow(dummy_data) * 0.2)  # Calculate how many sample represent 20% of the dataset
+choice <-  sample(1:nrow(dummy_data), size = eighty_percents, replace = F) # Randomly selecting 20% of the number of patient
+
+data.test <- dummy_data[choice, ] # Keep 20% of the dataset
+data.train <- dummy_data[-choice,] # Keep the other 80% of the dataset
+
+disease.test <- data$HeartDisease[choice]
+disease.train <- data$HeartDisease[-choice]
+```
+
+Now, let’s run the knn algorithm.
+
+``` r
+heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=10)
+
+compare.pred <- table(heart_pred_knn, disease.test)
+
+stats_linear_reg_all <- confusionMatrix(compare.pred)
+
+stats_linear_reg_all$overall
+```
+
+    ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+    ##   9.130435e-01   8.244065e-01   8.626289e-01   9.494785e-01   5.489130e-01 
+    ## AccuracyPValue  McnemarPValue 
+    ##   2.411865e-27   1.000000e+00
+
+``` r
+stats_linear_reg_all$byClass
+```
+
+    ##          Sensitivity          Specificity       Pos Pred Value 
+    ##            0.9036145            0.9207921            0.9036145 
+    ##       Neg Pred Value            Precision               Recall 
+    ##            0.9207921            0.9036145            0.9036145 
+    ##                   F1           Prevalence       Detection Rate 
+    ##            0.9036145            0.4510870            0.4076087 
+    ## Detection Prevalence    Balanced Accuracy 
+    ##            0.4510870            0.9122033

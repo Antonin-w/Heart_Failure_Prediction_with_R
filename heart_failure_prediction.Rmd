@@ -18,6 +18,8 @@ library(skimr)
 library(corrplot)
 library(caret) 
 library(olsrr)
+library(class)
+library(fastDummies)
 ```
 
 # Data importation and curation
@@ -287,8 +289,8 @@ Both p-value are below 0.05, so we can conclude they do not follow a normal dist
 ```{r}
 cor.test(data$RestingBP, as.numeric(data$HeartDisease), method = "spearman", exact = FALSE)
 cor.test(data$MaxHR, as.numeric(data$HeartDisease), method = "spearman", exact = FALSE)
-
 ```
+
 The hypothesis H0 for cor.test is : There is no association between the two variables. However, in both case, p-value < 0.05, so we rejet the nul hypothesis. It can be concluded that both RestingBP and MaxHR do have a correclation with heart diseases. The correlation coefficient is around 0.12 for RestingBP, and -0.40 for MaxHR. Therefore, MaxHR has a higher impact on heart diseases than RestingBP. 
 
 A higher amount of patients can be seen with high fasting blood sugar [>120 mg/dl] and exercice-induces angina among heart disease victims (Fig. D and Fig. E), both could be an important factor. 
@@ -318,7 +320,7 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
 
 ```{r}
 data <- data %>%
-  mutate(HeartDisease = ifelse(HeartDisease == "1", TRUE, FALSE))
+  mutate(HeartDisease = ifelse(HeartDisease == 1, TRUE, FALSE))
 ```
 
 Before training any model, the dataset has to be split in two, 80% of the dataset will be used to train the model, and the other 20% will serve to test it. 
@@ -340,7 +342,6 @@ linear_reg_all <- lm(HeartDisease ~ ., data = data.train)
 ```{r}
 data.test$pred = predict(linear_reg_all, data.test) > 0.5
 confusion_matrix_linear_reg_all <- table(data.test$HeartDisease, data.test$pred)
-(confusion_matrix_linear_reg_all[1,1] + confusion_matrix_linear_reg_all[2,2]) / sum(confusion_matrix_linear_reg_all) * 100
 
 stats_linear_reg_all <- confusionMatrix(confusion_matrix_linear_reg_all)
 
@@ -350,7 +351,7 @@ stats_linear_reg_all$byClass
 
 The best model isn't necessary the one with the best accuracy, because it's gonna be always one with all the factors, we can try to simplify as much as we can the model by removing the factor not bringing enough information to help for the prediction.
 
-From the package `olsrr` (similar to `leaps`), the funcion ols_step_best_subset will perform all the combination and return the best predictors. The Mallows's C(p) is a good indicator to know which model choose at the end, balancing between complexity and accuracy. 
+From the package `olsrr` (similar to `leaps`), the funcion ols_step_best_subset will perform all the combination and return the best predictors. The Mallows's C(p) is a good indicator to know which model choose at the end, balancing between complexity and accuracy.
 
 ```{r}
 ols_step_best_subset(linear_reg_all)
@@ -372,7 +373,66 @@ stats_linear_reg_1$byClass
 The performances statistics of the model are quite similar to the previous one while removing 9 factors. 
 
 
+# Knn 
 
+As we have qualitative values in our dataset, we'd like to convert them in dummy variables. But before that, let's scale the variable Age, RestingBP, MaxHR and OldPeak because they aren't on the same metrics and could be a problem for the knn algorithm. 
+
+```{r}
+data[,c("Age", "RestingBP", "MaxHR", "Oldpeak")] <- scale(data[,c("Age", "RestingBP", "MaxHR", "Oldpeak")])
+
+dummy_two <- dummy_cols(data, select_columns = c("Sex", "FastingBS", "ExerciseAngina", "HeartDisease"), remove_first_dummy = TRUE) # Dummy code variables that have just two levels
+dummy_three_plus <- dummy_cols(data, select_columns = c("ChestPainType", "RestingECG", "ST_Slope")) # Dummy code variables that have three levels or plus
+
+
+# Creation of a dataframe with all factors represented as dummy variables: 
+dummy_data <- data.frame(dummy_two$Sex_M, 
+                         dummy_two$Age, 
+                         dummy_two$FastingBS_1,
+                         dummy_two$ExerciseAngina_Y,
+                         
+                         data$RestingBP,
+                         data$MaxHR,
+                         data$Oldpeak,
+                         
+                         dummy_three_plus$ChestPainType_ASY,
+                         dummy_three_plus$ChestPainType_ATA,
+                         dummy_three_plus$ChestPainType_NAP,
+                         dummy_three_plus$ChestPainType_TA,
+                         dummy_three_plus$RestingECG_LVH,
+                         dummy_three_plus$RestingECG_Normal,
+                         dummy_three_plus$RestingECG_ST,
+                         dummy_three_plus$ST_Slope_Down,
+                         dummy_three_plus$ST_Slope_Flat,
+                         dummy_three_plus$ST_Slope_Up
+                         )
+
+```
+
+Same as before, we have to split the dataset in training and testing sets. 
+
+```{r}
+eighty_percents <- round(nrow(dummy_data) * 0.2)  # Calculate how many sample represent 20% of the dataset
+choice <-  sample(1:nrow(dummy_data), size = eighty_percents, replace = F) # Randomly selecting 20% of the number of patient
+
+data.test <- dummy_data[choice, ] # Keep 20% of the dataset
+data.train <- dummy_data[-choice,] # Keep the other 80% of the dataset
+
+disease.test <- data$HeartDisease[choice]
+disease.train <- data$HeartDisease[-choice]
+```
+
+Now, let's run the knn algorithm. 
+
+```{r}
+heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=10)
+
+compare.pred <- table(heart_pred_knn, disease.test)
+
+stats_linear_reg_all <- confusionMatrix(compare.pred)
+
+stats_linear_reg_all$overall
+stats_linear_reg_all$byClass
+```
 
 
 
