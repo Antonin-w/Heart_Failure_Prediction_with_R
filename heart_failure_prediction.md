@@ -1,6 +1,6 @@
 Heart Failure Prediction
 ================
-2024-09-20
+2024-09-21
 
 ``` r
 library(ggplot2)
@@ -447,7 +447,7 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
 ## Data train & data test
 
 ``` r
-data <- data %>%
+data_linear <- data %>%
   mutate(HeartDisease = ifelse(HeartDisease == 1, TRUE, FALSE))
 ```
 
@@ -456,11 +456,11 @@ the dataset will be used to train the model, and the other 20% will
 serve to test it.
 
 ``` r
-eighty_percents <- round(nrow(data) * 0.2)  # Calculate how many sample represent 20% of the dataset
-choice <-  sample(1:nrow(data), size = eighty_percents, replace = F) # Randomly selecting 20% of the number of patient
+eighty_percents <- round(nrow(data_linear) * 0.2)  # Calculate how many sample represent 20% of the dataset
+choice <-  sample(1:nrow(data_linear), size = eighty_percents, replace = F) # Randomly selecting 20% of the number of patient
 
-data.test <- data[choice, ] # Keep 20% of the dataset
-data.train <- data[-choice,] # Keep the other 80% of the dataset
+data.test <- data_linear[choice, ] # Keep 20% of the dataset
+data.train <- data_linear[-choice,] # Keep the other 80% of the dataset
 ```
 
 ## Linear regression
@@ -479,22 +479,22 @@ stats_linear_reg_all$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   8.423913e-01   6.844097e-01   7.815544e-01   8.918348e-01   5.108696e-01 
+    ##   8.858696e-01   7.676209e-01   8.308419e-01   9.279468e-01   5.815217e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   3.938389e-21   7.103466e-01
+    ##   1.262075e-19   3.827331e-01
 
 ``` r
 stats_linear_reg_all$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.8222222            0.8617021            0.8505747 
+    ##            0.8961039            0.8785047            0.8414634 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.8350515            0.8505747            0.8222222 
+    ##            0.9215686            0.8414634            0.8961039 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.8361582            0.4891304            0.4021739 
+    ##            0.8679245            0.4184783            0.3750000 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.4728261            0.8419622
+    ##            0.4456522            0.8873043
 
 The best model isn’t necessary the one with the best accuracy, because
 it’s gonna be always one with all the factors, we can try to simplify as
@@ -531,16 +531,16 @@ ols_step_best_subset(linear_reg_all)
     ##                        Adj.        Pred                                                                                              
     ## Model    R-Square    R-Square    R-Square      C(p)        AIC          SBIC         SBC         MSEP       FPE       HSP      APC  
     ## ------------------------------------------------------------------------------------------------------------------------------------
-    ##   1        0.3955      0.3939      0.3904    286.6233    693.3269    -1392.9342    711.7209    109.6231    0.1500    2e-04    0.6078 
-    ##   2        0.4902      0.4867      0.4801    133.7124    574.2985    -1515.5971    606.4881     92.5805    0.1272    2e-04    0.5140 
-    ##   3        0.5235      0.5196      0.5124     79.8284    526.7262    -1562.9475    563.5143     86.6531    0.1192    2e-04    0.4817 
-    ##   4        0.5420      0.5376      0.5301     50.8024    499.6869    -1589.7717    541.0735     83.4062    0.1149    2e-04    0.4643 
-    ##   5        0.5574      0.5525      0.5443     26.9930    476.6227    -1612.5246    522.6078     80.7170    0.1113    2e-04    0.4499 
-    ##   6        0.5639      0.5585      0.5498     17.9614    467.6429    -1621.3199    518.2265     79.6281    0.1100    2e-04    0.4445 
-    ##   7        0.5699      0.5639      0.5546      9.9814    459.5662    -1629.1697    514.7484     78.6507    0.1088    1e-04    0.4396 
-    ##   8        0.5712      0.5646      0.5546      9.8406    459.3865    -1629.2619    519.1672     78.5258    0.1087    1e-04    0.4395 
-    ##   9        0.5716      0.5639      0.5523     13.0130    462.5423    -1628.0435    531.5199     78.5440    0.1091    1e-04    0.4402 
-    ##  10        0.5717      0.5633      0.5509     15.0000    464.5289    -1626.0147    538.1051     78.6514    0.1094    1e-04    0.4414 
+    ##   1        0.3730      0.3713      0.3676    285.0842    722.4488    -1363.8066    740.8429    114.0599    0.1560    2e-04    0.6304 
+    ##   2        0.4804      0.4768      0.4704    117.6328    590.6110    -1499.1773    622.8006     94.6611    0.1300    2e-04    0.5239 
+    ##   3        0.5106      0.5065      0.4995     70.8385    548.6658    -1540.9213    585.4538     89.2823    0.1228    2e-04    0.4948 
+    ##   4        0.5262      0.5217      0.5142     47.5347    526.7966    -1562.6205    568.1832     86.5443    0.1192    2e-04    0.4803 
+    ##   5        0.5430      0.5380      0.5299     22.4290    502.3362    -1586.7376    548.3213     83.5948    0.1153    2e-04    0.4645 
+    ##   6        0.5490      0.5434      0.5347     14.7408    494.6424    -1594.2584    545.2260     82.6117    0.1141    2e-04    0.4597 
+    ##   7        0.5528      0.5467      0.5373     10.5326    490.3626    -1598.3857    545.5447     82.0209    0.1134    2e-04    0.4570 
+    ##   8        0.5547      0.5479      0.5377      9.5996    489.3770    -1599.2654    549.1576     81.8007    0.1133    2e-04    0.4564 
+    ##   9        0.5550      0.5470      0.5352     13.0001    492.7653    -1597.8201    561.7430     81.8457    0.1137    2e-04    0.4573 
+    ##  10        0.5550      0.5464      0.5337     15.0000    494.7652    -1595.7785    568.3413     81.9590    0.1140    2e-04    0.4585 
     ## ------------------------------------------------------------------------------------------------------------------------------------
     ## AIC: Akaike Information Criteria 
     ##  SBIC: Sawa's Bayesian Information Criteria 
@@ -565,27 +565,27 @@ stats_linear_reg_1$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   7.989130e-01   5.954362e-01   7.336453e-01   8.542879e-01   5.543478e-01 
+    ##   8.369565e-01   6.708015e-01   7.754995e-01   8.872100e-01   5.434783e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   3.017861e-12   5.107978e-01
+    ##   3.536390e-17   8.551321e-01
 
 ``` r
 stats_linear_reg_1$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.8048780            0.7941176            0.7586207 
+    ##            0.8095238            0.8600000            0.8292683 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.8350515            0.7586207            0.8048780 
+    ##            0.8431373            0.8292683            0.8095238 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.7810651            0.4456522            0.3586957 
+    ##            0.8192771            0.4565217            0.3695652 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.4728261            0.7994978
+    ##            0.4456522            0.8347619
 
 The performances statistics of the model are quite similar to the
 previous one while removing 9 factors.
 
-# Knn
+# k-Nearest Neighbors
 
 As we have qualitative values in our dataset, we’d like to convert them
 in dummy variables. But before that, let’s scale the variable Age,
@@ -636,10 +636,13 @@ disease.test <- data$HeartDisease[choice]
 disease.train <- data$HeartDisease[-choice]
 ```
 
-Now, let’s run the knn algorithm.
+To start with, it is recommended to use k (Number of Nearest Neighbors
+used for the prediction) as `k = sqrt(N)/2`.
 
 ``` r
-heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=10)
+l = round(sqrt(nrow(data.train))/2) # Determine k 
+
+heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=l) 
 
 compare.pred <- table(heart_pred_knn, disease.test)
 
@@ -649,19 +652,73 @@ stats_linear_reg_all$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   9.130435e-01   8.244065e-01   8.626289e-01   9.494785e-01   5.489130e-01 
+    ##   8.532609e-01   7.012268e-01   7.937285e-01   9.010174e-01   5.543478e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   2.411865e-27   1.000000e+00
+    ##   4.374346e-18   4.414183e-01
 
 ``` r
 stats_linear_reg_all$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.9036145            0.9207921            0.9036145 
+    ##            0.8048780            0.8921569            0.8571429 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.9207921            0.9036145            0.9036145 
+    ##            0.8504673            0.8571429            0.8048780 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.9036145            0.4510870            0.4076087 
+    ##            0.8301887            0.4456522            0.3586957 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.4510870            0.9122033
+    ##            0.4184783            0.8485175
+
+However, the goal is to play with the k value to see which one best fit
+our dataset. To do se, we can use the `train` funcion of the `caret`
+package. It’s gonna automatically run the algorithm with a
+cross-validation (we keep p = 0.8, 80% train / 20% test) for the
+differents k-values we’ll set up (here, from 1 to 100).
+
+``` r
+grid = expand.grid(k = c(1:100)) # From k = 1 to k = 100 
+
+pred_caret <- train(dummy_data, data$HeartDisease, method = "knn", preProcess = c("center","scale"),
+                    trControl = trainControl(method = 'cv',
+                                             search = "grid",
+                                             p = 0.8),
+                     tuneGrid = grid)
+```
+
+``` r
+plot(pred_caret)
+```
+
+![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+When we have a look at the result, we can see that there is a plateau
+with the highest accuracy rate around k = 40, and seem to be the best k
+value for our dataset.
+
+``` r
+heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=40) 
+
+compare.pred <- table(heart_pred_knn, disease.test)
+
+stats_linear_reg_all <- confusionMatrix(compare.pred)
+
+stats_linear_reg_all$overall
+```
+
+    ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+    ##   8.478261e-01   6.920134e-01   7.876304e-01   8.964375e-01   5.543478e-01 
+    ## AccuracyPValue  McnemarPValue 
+    ##   1.994842e-17   1.000000e+00
+
+``` r
+stats_linear_reg_all$byClass
+```
+
+    ##          Sensitivity          Specificity       Pos Pred Value 
+    ##            0.8292683            0.8627451            0.8292683 
+    ##       Neg Pred Value            Precision               Recall 
+    ##            0.8627451            0.8292683            0.8292683 
+    ##                   F1           Prevalence       Detection Rate 
+    ##            0.8292683            0.4456522            0.3695652 
+    ## Detection Prevalence    Balanced Accuracy 
+    ##            0.4456522            0.8460067
