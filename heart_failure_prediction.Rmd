@@ -20,6 +20,7 @@ library(caret)
 library(olsrr)
 library(class)
 library(fastDummies)
+library(randomForest)
 ```
 
 # Data importation and curation
@@ -465,11 +466,52 @@ stats_linear_reg_all$overall
 stats_linear_reg_all$byClass
 ```
 
+# Random forest
+
+```{r}
+eighty_percents <- round(nrow(data) * 0.2)  # Calculate how many sample represent 20% of the dataset
+choice <-  sample(1:nrow(data), size = eighty_percents, replace = F) # Randomly selecting 20% of the number of patient
+
+data.test <- data[choice, ] # Keep 20% of the dataset
+data.train <- data[-choice,] # Keep the other 80% of the dataset
+``` 
+
+```{r, dpi=300}
+forest_1 = randomForest(HeartDisease ~ . , data.train, ntree = 1000, mtry = 2)
+
+varImpPlot(forest_1)
+plot(forest_1$err.rate[, 1], type = "l", xlab = "Tree number", ylab = "OOB Error")
+```
 
 
+It can be seen that above 500 trees, the OOB Error is globally the same. To save some time, we will set up ntree = 500. 
 
+```{r}
+forest_2 = randomForest(HeartDisease ~ . , data.train, ntree = 500, mtry = 2)
 
+pred_forest_2 <- predict(forest_2, data.test)
+confusionMatrix(pred_forest_2, data.test$HeartDisease)
+```
 
+```{r}
+tunegrid <- expand.grid(.mtry = (1:10)) 
+
+forest_3 <- train(HeartDisease ~ ., data = data.train, method = "rf",
+                  trControl = trainControl(method = 'cv', p = 0.8),
+                  tuneGrid = tunegrid,
+                  metric = 'Accuracy',
+                  ntree = 500)
+
+pred_forest_3 <- predict(forest_3, data.test)
+confusionMatrix(pred_forest_3, data.test$HeartDisease)
+```
+
+```{r}
+forest_4 = randomForest(HeartDisease ~ . , data.train, ntree = 500, mtry = 4)
+
+pred_forest_4 <- predict(forest_4, data.test)
+confusionMatrix(pred_forest_4, data.test$HeartDisease)
+```
 
 
 
