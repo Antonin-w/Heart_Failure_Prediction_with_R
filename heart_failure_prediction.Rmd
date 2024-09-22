@@ -317,7 +317,9 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
 
 # Machine learning models  
 
-## Data train & data test
+## Linear regression
+
+### Preparing data
 
 ```{r}
 data_linear <- data %>%
@@ -334,7 +336,7 @@ data.test <- data_linear[choice, ] # Keep 20% of the dataset
 data.train <- data_linear[-choice,] # Keep the other 80% of the dataset
 ``` 
 
-## Linear regression
+### Creating model 
 
 ```{r}
 linear_reg_all <- lm(HeartDisease ~ ., data = data.train)
@@ -374,7 +376,9 @@ stats_linear_reg_1$byClass
 The performances statistics of the model are quite similar to the previous one while removing 9 factors. 
 
 
-# k-Nearest Neighbors
+## k-Nearest Neighbors
+
+### Preparing data
 
 As we have qualitative values in our dataset, we'd like to convert them in dummy variables. But before that, let's scale the variable Age, RestingBP, MaxHR and OldPeak because they aren't on the same metrics and could be a problem for the knn algorithm. 
 
@@ -422,6 +426,8 @@ disease.test <- data$HeartDisease[choice]
 disease.train <- data$HeartDisease[-choice]
 ```
 
+### Creating model 
+
 To start with, it is recommended to use k (Number of Nearest Neighbors used for the prediction) as `k = sqrt(N)/2`. 
 
 ```{r}
@@ -431,42 +437,45 @@ heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, 
 
 compare.pred <- table(heart_pred_knn, disease.test)
 
-stats_linear_reg_all <- confusionMatrix(compare.pred)
+stats_knn_1 <- confusionMatrix(compare.pred)
 
-stats_linear_reg_all$overall
-stats_linear_reg_all$byClass
+stats_knn_1$overall
+stats_knn_1$byClass
 ```
 
 However, the goal is to play with the k value to see which one best fit our dataset. To do se, we can use the `train` funcion of the `caret` package. It's gonna automatically run the algorithm with a cross-validation (we keep p = 0.8, 80% train / 20% test) for the differents k-values we'll set up (here, from 1 to 100).
 
 ```{r}
-grid = expand.grid(k = c(1:100)) # From k = 1 to k = 100 
+grid = expand.grid(k = seq(1, 20, by = 2)) # From k = 1 to k = 20, only odds. 
 
-pred_caret <- train(dummy_data, data$HeartDisease, method = "knn", preProcess = c("center","scale"),
+pred_knn_caret <- train(dummy_data, data$HeartDisease, method = "knn", preProcess = c("center","scale"),
                     trControl = trainControl(method = 'cv',
                                              search = "grid",
                                              p = 0.8),
                      tuneGrid = grid)
 ```
 
-```{r, dpi=300}
-plot(pred_caret)
-```
 
-When we have a look at the result, we can see that there is a plateau with the highest accuracy rate around k = 40, and seem to be the best k value for our dataset. 
+```{r, dpi=300}
+pred_knn_caret
+plot(pred_knn_caret)
+```
+It is recommended to choose an odd value for k to avoid ties and thus NA values in the predictions. It our simulations, k = 11 has the best accuracy rate, so we'll keep this value. 
 
 ```{r}
-heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=40) 
+heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=11) 
 
 compare.pred <- table(heart_pred_knn, disease.test)
 
-stats_linear_reg_all <- confusionMatrix(compare.pred)
+stats_knn_2 <- confusionMatrix(compare.pred)
 
-stats_linear_reg_all$overall
-stats_linear_reg_all$byClass
+stats_knn_2$overall
+stats_knn_2$byClass
 ```
 
-# Random forest
+## Random forest
+
+### Preparing data
 
 ```{r}
 eighty_percents <- round(nrow(data) * 0.2)  # Calculate how many sample represent 20% of the dataset
@@ -475,6 +484,8 @@ choice <-  sample(1:nrow(data), size = eighty_percents, replace = F) # Randomly 
 data.test <- data[choice, ] # Keep 20% of the dataset
 data.train <- data[-choice,] # Keep the other 80% of the dataset
 ``` 
+
+### Creating model 
 
 ```{r, dpi=300}
 forest_1 = randomForest(HeartDisease ~ . , data.train, ntree = 1000, mtry = 2)

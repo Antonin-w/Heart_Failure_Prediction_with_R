@@ -445,7 +445,9 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
 
 # Machine learning models
 
-## Data train & data test
+## Linear regression
+
+### Preparing data
 
 ``` r
 data_linear <- data %>%
@@ -464,7 +466,7 @@ data.test <- data_linear[choice, ] # Keep 20% of the dataset
 data.train <- data_linear[-choice,] # Keep the other 80% of the dataset
 ```
 
-## Linear regression
+### Creating model
 
 ``` r
 linear_reg_all <- lm(HeartDisease ~ ., data = data.train)
@@ -480,22 +482,22 @@ stats_linear_reg_all$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   8.206522e-01   6.364943e-01   7.574537e-01   8.732124e-01   5.869565e-01 
+    ##   8.695652e-01   7.386364e-01   8.121652e-01   9.146080e-01   5.434783e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   1.042330e-11   1.637344e-01
+    ##   2.642168e-21   3.074342e-01
 
 ``` r
 stats_linear_reg_all$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.8421053            0.8055556            0.7529412 
+    ##            0.8928571            0.8500000            0.8333333 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.8787879            0.7529412            0.8421053 
+    ##            0.9042553            0.8333333            0.8928571 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.7950311            0.4130435            0.3478261 
+    ##            0.8620690            0.4565217            0.4076087 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.4619565            0.8238304
+    ##            0.4891304            0.8714286
 
 The best model isn’t necessary the one with the best accuracy, because
 it’s gonna be always one with all the factors, we can try to simplify as
@@ -518,10 +520,10 @@ ols_step_best_subset(linear_reg_all)
     ##      1         ST_Slope                                                                                   
     ##      2         ChestPainType ST_Slope                                                                     
     ##      3         Sex ChestPainType ST_Slope                                                                 
-    ##      4         Sex ChestPainType FastingBS ST_Slope                                                       
+    ##      4         ChestPainType FastingBS ExerciseAngina ST_Slope                                            
     ##      5         Sex ChestPainType FastingBS ExerciseAngina ST_Slope                                        
     ##      6         Sex ChestPainType FastingBS ExerciseAngina Oldpeak ST_Slope                                
-    ##      7         Sex ChestPainType FastingBS MaxHR ExerciseAngina Oldpeak ST_Slope                          
+    ##      7         Age Sex ChestPainType FastingBS ExerciseAngina Oldpeak ST_Slope                            
     ##      8         Age Sex ChestPainType FastingBS MaxHR ExerciseAngina Oldpeak ST_Slope                      
     ##      9         Age Sex ChestPainType FastingBS RestingECG MaxHR ExerciseAngina Oldpeak ST_Slope           
     ##     10         Age Sex ChestPainType RestingBP FastingBS RestingECG MaxHR ExerciseAngina Oldpeak ST_Slope 
@@ -532,16 +534,16 @@ ols_step_best_subset(linear_reg_all)
     ##                        Adj.        Pred                                                                                              
     ## Model    R-Square    R-Square    R-Square      C(p)        AIC          SBIC         SBC         MSEP       FPE       HSP      APC  
     ## ------------------------------------------------------------------------------------------------------------------------------------
-    ##   1        0.4079      0.4062      0.4026    288.9180    679.1624    -1407.1070    697.5564    107.5279    0.1471    2e-04    0.5954 
-    ##   2        0.5018      0.4983       0.492    133.6488    558.4214    -1531.4738    590.6110     90.5994    0.1244    2e-04    0.5023 
-    ##   3        0.5308      0.5269      0.5202     85.8565    516.4149    -1573.3161    553.2030     85.4443    0.1175    2e-04    0.4744 
-    ##   4        0.5506      0.5463      0.5392     53.7935    486.7144    -1602.7819    528.1010     81.9450    0.1129    2e-04    0.4556 
-    ##   5        0.5684      0.5637      0.5562     25.1296    458.9569    -1630.1604    504.9420     78.7975    0.1087    1e-04    0.4387 
-    ##   6        0.5751      0.5699      0.5617     15.6439    449.4927    -1639.4256    500.0763     77.6832    0.1073    1e-04    0.4330 
-    ##   7        0.5789      0.5731      0.5643     11.1881    444.9694    -1643.7936    500.1515     77.1021    0.1066    1e-04    0.4304 
-    ##   8        0.5809      0.5745       0.565      9.8018    443.5244    -1645.1231    503.3050     76.8470    0.1064    1e-04    0.4295 
-    ##   9        0.5813      0.5737      0.5629     13.0613    446.7690    -1643.8182    515.7466     76.8742    0.1067    1e-04    0.4303 
-    ##  10        0.5813      0.5732      0.5614     15.0000    448.7063    -1641.8373    522.2825     76.9741    0.1070    1e-04    0.4314 
+    ##   1        0.3917      0.3901      0.3866    278.0981    696.4258    -1389.8040    714.8198    110.0869    0.1506    2e-04    0.6116 
+    ##   2        0.4850      0.4815      0.4754    129.7512    580.1852    -1509.6843    612.3747     93.3260    0.1282    2e-04    0.5192 
+    ##   3        0.5115      0.5075      0.5008     87.9233    543.4099    -1546.3406    580.1980     88.6452    0.1219    2e-04    0.4938 
+    ##   4        0.5322      0.5277      0.5205     55.7770    513.7133    -1575.8078    555.0999     85.0153    0.1171    2e-04    0.4742 
+    ##   5        0.5496      0.5446      0.5368     28.9963    487.8915    -1601.2879    533.8765     81.9658    0.1130    2e-04    0.4578 
+    ##   6        0.5576      0.5521      0.5438     17.7296    476.7028    -1612.2556    527.2864     80.6170    0.1113    2e-04    0.4509 
+    ##   7        0.5631      0.5570      0.5481     10.7267    469.6159    -1619.1368    524.7980     79.7350    0.1103    2e-04    0.4466 
+    ##   8        0.5650      0.5584      0.5487      9.4949    468.3263    -1620.3134    528.1070     79.4881    0.1101    2e-04    0.4458 
+    ##   9        0.5652      0.5573      0.5461     13.2468    472.0732    -1618.5192    541.0508     79.5706    0.1105    2e-04    0.4469 
+    ##  10        0.5653      0.5568      0.5449     15.0000    473.8213    -1616.7224    547.3974     79.6534    0.1108    2e-04    0.4479 
     ## ------------------------------------------------------------------------------------------------------------------------------------
     ## AIC: Akaike Information Criteria 
     ##  SBIC: Sawa's Bayesian Information Criteria 
@@ -566,27 +568,29 @@ stats_linear_reg_1$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   7.826087e-01   5.604921e-01   7.159592e-01   8.399194e-01   5.706522e-01 
+    ##   8.043478e-01   6.073969e-01   7.395721e-01   8.590451e-01   5.760870e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   1.305963e-09   4.291953e-01
+    ##   4.715464e-11   6.675302e-02
 
 ``` r
 stats_linear_reg_1$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.7848101            0.7809524            0.7294118 
+    ##            0.8461538            0.7735849            0.7333333 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.8282828            0.7294118            0.7848101 
+    ##            0.8723404            0.7333333            0.8461538 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.7560976            0.4293478            0.3369565 
+    ##            0.7857143            0.4239130            0.3586957 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.4619565            0.7828813
+    ##            0.4891304            0.8098694
 
 The performances statistics of the model are quite similar to the
 previous one while removing 9 factors.
 
-# k-Nearest Neighbors
+## k-Nearest Neighbors
+
+### Preparing data
 
 As we have qualitative values in our dataset, we’d like to convert them
 in dummy variables. But before that, let’s scale the variable Age,
@@ -637,6 +641,8 @@ disease.test <- data$HeartDisease[choice]
 disease.train <- data$HeartDisease[-choice]
 ```
 
+### Creating model
+
 To start with, it is recommended to use k (Number of Nearest Neighbors
 used for the prediction) as `k = sqrt(N)/2`.
 
@@ -647,28 +653,28 @@ heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, 
 
 compare.pred <- table(heart_pred_knn, disease.test)
 
-stats_linear_reg_all <- confusionMatrix(compare.pred)
+stats_knn_1 <- confusionMatrix(compare.pred)
 
-stats_linear_reg_all$overall
+stats_knn_1$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   7.826087e-01   5.582763e-01   7.159592e-01   8.399194e-01   5.380435e-01 
+    ##   8.532609e-01   6.919643e-01   7.937285e-01   9.010174e-01   5.869565e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   4.777107e-12   8.199032e-02
+    ##   4.610046e-15   1.236577e-01
 
 ``` r
-stats_linear_reg_all$byClass
+stats_knn_1$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.6941176            0.8585859            0.8082192 
+    ##            0.7631579            0.9166667            0.8656716 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.7657658            0.8082192            0.6941176 
+    ##            0.8461538            0.8656716            0.7631579 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.7468354            0.4619565            0.3206522 
+    ##            0.8111888            0.4130435            0.3152174 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.3967391            0.7763518
+    ##            0.3641304            0.8399123
 
 However, the goal is to play with the k value to see which one best fit
 our dataset. To do se, we can use the `train` funcion of the `caret`
@@ -677,9 +683,9 @@ cross-validation (we keep p = 0.8, 80% train / 20% test) for the
 differents k-values we’ll set up (here, from 1 to 100).
 
 ``` r
-grid = expand.grid(k = c(1:100)) # From k = 1 to k = 100 
+grid = expand.grid(k = seq(1, 20, by = 2)) # From k = 1 to k = 20, only odds. 
 
-pred_caret <- train(dummy_data, data$HeartDisease, method = "knn", preProcess = c("center","scale"),
+pred_knn_caret <- train(dummy_data, data$HeartDisease, method = "knn", preProcess = c("center","scale"),
                     trControl = trainControl(method = 'cv',
                                              search = "grid",
                                              p = 0.8),
@@ -687,44 +693,75 @@ pred_caret <- train(dummy_data, data$HeartDisease, method = "knn", preProcess = 
 ```
 
 ``` r
-plot(pred_caret)
+pred_knn_caret
+```
+
+    ## k-Nearest Neighbors 
+    ## 
+    ## 918 samples
+    ##  17 predictor
+    ##   2 classes: '0', '1' 
+    ## 
+    ## Pre-processing: centered (17), scaled (17) 
+    ## Resampling: Cross-Validated (10 fold) 
+    ## Summary of sample sizes: 826, 826, 827, 827, 826, 826, ... 
+    ## Resampling results across tuning parameters:
+    ## 
+    ##   k   Accuracy   Kappa    
+    ##    1  0.8104634  0.6175448
+    ##    3  0.8420449  0.6802773
+    ##    5  0.8475036  0.6901964
+    ##    7  0.8486144  0.6919328
+    ##    9  0.8475275  0.6903222
+    ##   11  0.8399068  0.6747978
+    ##   13  0.8432035  0.6811029
+    ##   15  0.8399188  0.6746007
+    ##   17  0.8431916  0.6815981
+    ##   19  0.8464644  0.6883513
+    ## 
+    ## Accuracy was used to select the optimal model using the largest value.
+    ## The final value used for the model was k = 7.
+
+``` r
+plot(pred_knn_caret)
 ```
 
 ![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
-
-When we have a look at the result, we can see that there is a plateau
-with the highest accuracy rate around k = 40, and seem to be the best k
-value for our dataset.
+It is recommended to choose an odd value for k to avoid ties and thus NA
+values in the predictions. It our simulations, k = 11 has the best
+accuracy rate, so we’ll keep this value.
 
 ``` r
-heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=40) 
+heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=11) 
 
 compare.pred <- table(heart_pred_knn, disease.test)
 
-stats_linear_reg_all <- confusionMatrix(compare.pred)
+stats_knn_2 <- confusionMatrix(compare.pred)
 
-stats_linear_reg_all$overall
+stats_knn_2$overall
 ```
 
     ##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
-    ##   8.206522e-01   6.352715e-01   7.574537e-01   8.732124e-01   5.380435e-01 
+    ##   8.478261e-01   6.811881e-01   7.876304e-01   8.964375e-01   5.869565e-01 
     ## AccuracyPValue  McnemarPValue 
-    ##   7.647839e-16   3.671386e-02
+    ##   1.844170e-14   1.858767e-01
 
 ``` r
-stats_linear_reg_all$byClass
+stats_knn_2$byClass
 ```
 
     ##          Sensitivity          Specificity       Pos Pred Value 
-    ##            0.7294118            0.8989899            0.8611111 
+    ##            0.7631579            0.9074074            0.8529412 
     ##       Neg Pred Value            Precision               Recall 
-    ##            0.7946429            0.8611111            0.7294118 
+    ##            0.8448276            0.8529412            0.7631579 
     ##                   F1           Prevalence       Detection Rate 
-    ##            0.7898089            0.4619565            0.3369565 
+    ##            0.8055556            0.4130435            0.3152174 
     ## Detection Prevalence    Balanced Accuracy 
-    ##            0.3913043            0.8142008
+    ##            0.3695652            0.8352827
 
-# Random forest
+## Random forest
+
+### Preparing data
 
 ``` r
 eighty_percents <- round(nrow(data) * 0.2)  # Calculate how many sample represent 20% of the dataset
@@ -733,6 +770,8 @@ choice <-  sample(1:nrow(data), size = eighty_percents, replace = F) # Randomly 
 data.test <- data[choice, ] # Keep 20% of the dataset
 data.train <- data[-choice,] # Keep the other 80% of the dataset
 ```
+
+### Creating model
 
 ``` r
 forest_1 = randomForest(HeartDisease ~ . , data.train, ntree = 1000, mtry = 2)
@@ -762,28 +801,28 @@ confusionMatrix(pred_forest_2, data.test$HeartDisease)
     ## 
     ##           Reference
     ## Prediction  0  1
-    ##          0 69  4
-    ##          1 21 90
-    ##                                          
-    ##                Accuracy : 0.8641         
-    ##                  95% CI : (0.806, 0.9101)
-    ##     No Information Rate : 0.5109         
-    ##     P-Value [Acc > NIR] : < 2.2e-16      
-    ##                                          
-    ##                   Kappa : 0.727          
-    ##                                          
-    ##  Mcnemar's Test P-Value : 0.001374       
-    ##                                          
-    ##             Sensitivity : 0.7667         
-    ##             Specificity : 0.9574         
-    ##          Pos Pred Value : 0.9452         
-    ##          Neg Pred Value : 0.8108         
-    ##              Prevalence : 0.4891         
-    ##          Detection Rate : 0.3750         
-    ##    Detection Prevalence : 0.3967         
-    ##       Balanced Accuracy : 0.8621         
-    ##                                          
-    ##        'Positive' Class : 0              
+    ##          0 60 15
+    ##          1 17 92
+    ##                                           
+    ##                Accuracy : 0.8261          
+    ##                  95% CI : (0.7634, 0.8779)
+    ##     No Information Rate : 0.5815          
+    ##     P-Value [Acc > NIR] : 1.159e-12       
+    ##                                           
+    ##                   Kappa : 0.6414          
+    ##                                           
+    ##  Mcnemar's Test P-Value : 0.8597          
+    ##                                           
+    ##             Sensitivity : 0.7792          
+    ##             Specificity : 0.8598          
+    ##          Pos Pred Value : 0.8000          
+    ##          Neg Pred Value : 0.8440          
+    ##              Prevalence : 0.4185          
+    ##          Detection Rate : 0.3261          
+    ##    Detection Prevalence : 0.4076          
+    ##       Balanced Accuracy : 0.8195          
+    ##                                           
+    ##        'Positive' Class : 0               
     ## 
 
 ``` r
@@ -803,26 +842,26 @@ confusionMatrix(pred_forest_3, data.test$HeartDisease)
     ## 
     ##           Reference
     ## Prediction  0  1
-    ##          0 66  4
-    ##          1 24 90
+    ##          0 59 12
+    ##          1 18 95
     ##                                           
-    ##                Accuracy : 0.8478          
-    ##                  95% CI : (0.7876, 0.8964)
-    ##     No Information Rate : 0.5109          
-    ##     P-Value [Acc > NIR] : < 2.2e-16       
+    ##                Accuracy : 0.837           
+    ##                  95% CI : (0.7755, 0.8872)
+    ##     No Information Rate : 0.5815          
+    ##     P-Value [Acc > NIR] : 9.153e-14       
     ##                                           
-    ##                   Kappa : 0.6941          
+    ##                   Kappa : 0.6613          
     ##                                           
-    ##  Mcnemar's Test P-Value : 0.0003298       
+    ##  Mcnemar's Test P-Value : 0.3613          
     ##                                           
-    ##             Sensitivity : 0.7333          
-    ##             Specificity : 0.9574          
-    ##          Pos Pred Value : 0.9429          
-    ##          Neg Pred Value : 0.7895          
-    ##              Prevalence : 0.4891          
-    ##          Detection Rate : 0.3587          
-    ##    Detection Prevalence : 0.3804          
-    ##       Balanced Accuracy : 0.8454          
+    ##             Sensitivity : 0.7662          
+    ##             Specificity : 0.8879          
+    ##          Pos Pred Value : 0.8310          
+    ##          Neg Pred Value : 0.8407          
+    ##              Prevalence : 0.4185          
+    ##          Detection Rate : 0.3207          
+    ##    Detection Prevalence : 0.3859          
+    ##       Balanced Accuracy : 0.8270          
     ##                                           
     ##        'Positive' Class : 0               
     ## 
@@ -838,26 +877,26 @@ confusionMatrix(pred_forest_4, data.test$HeartDisease)
     ## 
     ##           Reference
     ## Prediction  0  1
-    ##          0 68  3
-    ##          1 22 91
-    ##                                          
-    ##                Accuracy : 0.8641         
-    ##                  95% CI : (0.806, 0.9101)
-    ##     No Information Rate : 0.5109         
-    ##     P-Value [Acc > NIR] : < 2.2e-16      
-    ##                                          
-    ##                   Kappa : 0.7269         
-    ##                                          
-    ##  Mcnemar's Test P-Value : 0.0003182      
-    ##                                          
-    ##             Sensitivity : 0.7556         
-    ##             Specificity : 0.9681         
-    ##          Pos Pred Value : 0.9577         
-    ##          Neg Pred Value : 0.8053         
-    ##              Prevalence : 0.4891         
-    ##          Detection Rate : 0.3696         
-    ##    Detection Prevalence : 0.3859         
-    ##       Balanced Accuracy : 0.8618         
-    ##                                          
-    ##        'Positive' Class : 0              
+    ##          0 59 12
+    ##          1 18 95
+    ##                                           
+    ##                Accuracy : 0.837           
+    ##                  95% CI : (0.7755, 0.8872)
+    ##     No Information Rate : 0.5815          
+    ##     P-Value [Acc > NIR] : 9.153e-14       
+    ##                                           
+    ##                   Kappa : 0.6613          
+    ##                                           
+    ##  Mcnemar's Test P-Value : 0.3613          
+    ##                                           
+    ##             Sensitivity : 0.7662          
+    ##             Specificity : 0.8879          
+    ##          Pos Pred Value : 0.8310          
+    ##          Neg Pred Value : 0.8407          
+    ##              Prevalence : 0.4185          
+    ##          Detection Rate : 0.3207          
+    ##    Detection Prevalence : 0.3859          
+    ##       Balanced Accuracy : 0.8270          
+    ##                                           
+    ##        'Positive' Class : 0               
     ## 
