@@ -21,11 +21,13 @@ library(olsrr)
 library(class)
 library(fastDummies)
 library(randomForest)
+library(knitr)
 ```
 
 # Data importation and curation
 
 ```{r class.source = 'fold-show'}
+set.seed(123)
 data = read.csv("/Users/antonin/Documents/Github/Heart_Failure_Prediction_with_R/data/heart.csv", stringsAsFactors = T)
 data$HeartDisease <- as.factor(data$HeartDisease)
 data$FastingBS <- as.factor(data$FastingBS)
@@ -372,6 +374,10 @@ stats_linear_reg_1 <- confusionMatrix(confusion_matrix_linear_reg_1)
 
 stats_linear_reg_1$overall
 stats_linear_reg_1$byClass
+
+accuracy_linear <- stats_linear_reg_1$overall[1]
+results_byClass <- data.frame(stats_linear_reg_1$byClass)
+
 ```
 The performances statistics of the model are quite similar to the previous one while removing 9 factors. 
 
@@ -443,7 +449,7 @@ stats_knn_1$overall
 stats_knn_1$byClass
 ```
 
-However, the goal is to play with the k value to see which one best fit our dataset. To do se, we can use the `train` funcion of the `caret` package. It's gonna automatically run the algorithm with a cross-validation (we keep p = 0.8, 80% train / 20% test) for the differents k-values we'll set up (here, from 1 to 100).
+However, the goal is to play with the k value to see which one best fit our dataset. To do se, we can use the `train` funcion of the `caret` package. It's gonna automatically run the algorithm with a cross-validation (we keep p = 0.8, 80% train / 20% test) for the differents k-values we'll set up (here, from 1 to 20).
 
 ```{r}
 grid = expand.grid(k = seq(1, 20, by = 2)) # From k = 1 to k = 20, only odds. 
@@ -460,10 +466,11 @@ pred_knn_caret <- train(dummy_data, data$HeartDisease, method = "knn", preProces
 pred_knn_caret
 plot(pred_knn_caret)
 ```
-It is recommended to choose an odd value for k to avoid ties and thus NA values in the predictions. It our simulations, k = 11 has the best accuracy rate, so we'll keep this value. 
+It is recommended to choose an odd value for k to avoid ties and thus NA values in the predictions. 
 
 ```{r}
-heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=11) 
+
+heart_pred_knn <- knn(train = data.train, test = data.test, cl = disease.train, k=pred_knn_caret$bestTune) # We put k as pred_knn_caret$bestTune (k with highest accuracy)
 
 compare.pred <- table(heart_pred_knn, disease.test)
 
@@ -471,6 +478,9 @@ stats_knn_2 <- confusionMatrix(compare.pred)
 
 stats_knn_2$overall
 stats_knn_2$byClass
+
+accuracy_knn <- stats_knn_2$overall[1]
+results_byClass <- cbind(results_byClass, as.data.frame(stats_knn_2$byClass))
 ```
 
 ## Random forest
@@ -504,7 +514,7 @@ pred_forest_2 <- predict(forest_2, data.test)
 confusionMatrix(pred_forest_2, data.test$HeartDisease)
 ```
 
-```{r}
+```{r, dpi=300}
 tunegrid <- expand.grid(.mtry = (1:10)) 
 
 forest_3 <- train(HeartDisease ~ ., data = data.train, method = "rf",
@@ -512,6 +522,8 @@ forest_3 <- train(HeartDisease ~ ., data = data.train, method = "rf",
                   tuneGrid = tunegrid,
                   metric = 'Accuracy',
                   ntree = 500)
+
+plot(forest_3)
 
 pred_forest_3 <- predict(forest_3, data.test)
 confusionMatrix(pred_forest_3, data.test$HeartDisease)
@@ -521,11 +533,28 @@ confusionMatrix(pred_forest_3, data.test$HeartDisease)
 forest_4 = randomForest(HeartDisease ~ . , data.train, ntree = 500, mtry = 4)
 
 pred_forest_4 <- predict(forest_4, data.test)
-confusionMatrix(pred_forest_4, data.test$HeartDisease)
+stats_random_forest <- confusionMatrix(pred_forest_4, data.test$HeartDisease)
+
+accuracy_forest <- stats_random_forest$overall[1]
+results_byClass <- cbind(results_byClass, as.data.frame(stats_random_forest$byClass))
+```
+
+# Results
+
+
+```{r}
+results_clean <- results_byClass[c("Precision", "Recall", "F1"),]
+results_clean <- as.data.frame(t(results_clean))
+results_clean$Accuracy <- c(accuracy_linear, accuracy_knn, accuracy_forest)
+rownames(results_clean) <- c("Linear Regression", "Knn", "Random Forest")
+
+
 ```
 
 
-
+```{r}
+kable(results_clean, format = "markdown")
+```
 
 
 
