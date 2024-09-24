@@ -355,25 +355,25 @@ angina <- ggarrange(exercice_angina_plot_0, exercice_angina_plot_1, ncol=2, nrow
 ggarrange(age_distribution_sex, boxplots, ncol = 2, nrow = 1, labels = c("A"))
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-1.png?raw=true)<!-- -->
 
 ``` r
 ggarrange(fasting, angina, ncol=2, nrow=1, labels = c("D", "E")) 
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-2.png?raw=true)<!-- -->
 
 ``` r
 ggarrange(chest_pain_plot, resting_ecg_plot, st_slope_plot, ncol=3, nrow=1, labels = c("F", "G", "H"))
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-3.png?raw=true)<!-- -->
 
 ``` r
 ggarrange(Oldpeak_plot, ncol=1, nrow=1, labels = c("I"))
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-8-4.png?raw=true)<!-- -->
 
 At first glance, we can clearly see a surepresentation of Male within
 the data, and a sample age tending toward 55 years old (Fig. A). The
@@ -473,7 +473,7 @@ correlation_matrix <- corrplot(red, method="color", type="lower", addCoef.col = 
          tl.col = "black", tl.srt = 45)
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-11-1.png?raw=true)<!-- -->
 
 # Machine learning models
 
@@ -820,13 +820,13 @@ forest_1 = randomForest(HeartDisease ~ . , data.train, ntree = 1000, mtry = 2)
 varImpPlot(forest_1)
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-25-1.png?raw=true)<!-- -->
 
 ``` r
 plot(forest_1$err.rate[, 1], type = "l", xlab = "Tree number", ylab = "OOB Error")
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-25-2.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-25-2.png?raw=true)<!-- -->
 
 It can be seen that above 500 trees, the OOB Error is globally the same.
 To save some time, we will set up ntree = 500.
@@ -878,7 +878,7 @@ forest_3 <- train(HeartDisease ~ ., data = data.train, method = "rf",
 plot(forest_3)
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-27-1.png?raw=true)<!-- -->
 
 ``` r
 pred_forest_3 <- predict(forest_3, data.test)
