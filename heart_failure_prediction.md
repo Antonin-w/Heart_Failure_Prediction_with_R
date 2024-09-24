@@ -763,7 +763,7 @@ pred_knn_caret
 plot(pred_knn_caret)
 ```
 
-![](heart_failure_prediction_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](https://github.com/Antonin-w/Heart_Failure_Prediction_with_R/blob/e03e32ba66a6f35d47b223cc78ab9d34b08edd0a/heart_failure_prediction_files/figure-gfm/unnamed-chunk-22-1.png?raw=true)<!-- -->
 It is recommended to choose an odd value for k to avoid ties and thus NA
 values in the predictions.
 
